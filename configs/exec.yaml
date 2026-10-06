@@ -1,0 +1,2 @@
+# Execution arm config. Filled in at M4; must match static.yaml except for the container.
+arm: exec

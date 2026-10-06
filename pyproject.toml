@@ -1,0 +1,37 @@
+[project]
+name = "execloc"
+version = "0.1.0"
+description = "Does code execution help an LLM agent localize bugs? (CS527)"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "mini-swe-agent",
+    "datasets",
+    "unidiff",
+    "pandas",
+    "scipy",
+    "matplotlib",
+    "python-dotenv",
+    "pyyaml",
+]
+
+[project.scripts]
+execloc = "execloc.cli:main"
+
+[dependency-groups]
+dev = ["pytest"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/execloc"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.uv]
+# litellm (via mini-swe-agent) needs tokenizers; without a floor uv backtracks to
+# tokenizers 0.13.3, which has no prebuilt wheels and needs a Rust toolchain.
+constraint-dependencies = ["tokenizers>=0.20"]

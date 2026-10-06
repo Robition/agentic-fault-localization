@@ -1,0 +1,2 @@
+# Static arm config. Filled in at M3; must match exec.yaml except for the container.
+arm: static
