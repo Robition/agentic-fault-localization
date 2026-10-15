@@ -10,3 +10,30 @@ See SETUP.md for the full brief and milestones.
 - **No make, no bash scripts for required workflows.** Teammates use Linux, macOS, and Windows. Expose every workflow as a subcommand of one Python CLI.
 - **Verify, don't guess.** Before you use any mini-SWE-agent or SWE-bench API, read the installed package's source or docs. Don't rely on remembered flags or class names.
 - **Stop and ask the human** when a section says "Decision needed," or when a check fails twice.
+
+## Status (updated 2026-10-15)
+
+| Milestone | State |
+|---|---|
+| M0 skeleton | Done |
+| M1 doctor | Not started (stub) |
+| M2 data | Done. `data/instances.jsonl` and `data/gold.jsonl` are frozen. Never regenerate them. |
+| M3 static arm | Not started |
+| M4 exec arm | Not started |
+| M5 batch and resume | Not started |
+| M6 scoring | Done |
+| M7 README | Not started |
+
+Decisions made: the model is `devstral-small-2`, served with Ollama on the 4090 machine. That machine runs Windows 11 Home and has a working Docker. See the "Decided" notes in SETUP.md.
+
+## Who works where (parallel work, avoid merge conflicts)
+
+- **4090 machine (Windows):** serving and machine validation only. Follow `docs/4090-machine.md`. Write results in `docs/serving.md`. Don't edit `src/`, `tests/`, `data/`, or `configs/`. Work on the branch `serving/4090`.
+- **Main dev machine:** M1, then M3 to M5 code, then M7. Owns `src/`, `tests/`, `configs/`, and `docker/`.
+- Before committing, both sides run `uv run pytest`, which must pass.
+
+## Conventions
+
+- Every workflow is an `execloc` subcommand in `src/execloc/cli.py`. The `sample`, `gold`, and `score` commands never need `.env`, Docker, or a model endpoint.
+- Write JSONL with `\n` line endings and UTF-8 (`execloc.dataset.write_jsonl`), so files are byte-identical on Windows.
+- The rules for building gold locations and for scoring are in the docstrings at the top of `src/execloc/gold.py` and `src/execloc/score.py`. If you change a rule, change its tests too.

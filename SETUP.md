@@ -24,7 +24,7 @@ The project measures whether code execution helps an LLM agent localize bugs. On
 
 Nobody reaches the model remotely. `EXECLOC_BASE_URL` points to localhost on the 4090 machine. On other machines, `sample`, `gold`, and `score` must work with no `.env` file and no Docker installed.
 
-Decision needed: confirm the operating system of the 4090 machine and whether Docker works on it.
+Decided (2026-10-15): the 4090 machine runs Windows 11 Home (25H2), and Docker works on it. It has an i7-14700K and 32 GB of DDR5. Its NVIDIA driver (610.88) runs in WDDM mode.
 
 ## Repository layout
 
@@ -157,7 +157,7 @@ Write a quickstart that takes a teammate from clone to one static run in under t
 
 ## Model serving notes
 
-Decision needed: the model. The 4090 has 24 GB of memory, so choose a coding model of roughly 24B to 30B parameters at 4-bit quantization, with tool-free bash-style prompting support and at least a 32K context. Don't use Qwen2.5-Coder-32B, because prior work already reports it.
+Decided (2026-10-15): the model is `devstral-small-2` (about 24B), served with Ollama. Quantization and revision are still to be confirmed with `ollama show devstral-small-2` and recorded in `meta.json`. Original brief: The 4090 has 24 GB of memory, so choose a coding model of roughly 24B to 30B parameters at 4-bit quantization, with tool-free bash-style prompting support and at least a 32K context. Don't use Qwen2.5-Coder-32B, because prior work already reports it.
 
 - Any OpenAI-compatible server works: vLLM, the llama.cpp server, or Ollama.
 - Set the context length explicitly. Some servers default to a small context and silently truncate, which corrupts results without an error.
