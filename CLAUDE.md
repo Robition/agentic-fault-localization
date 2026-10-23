@@ -11,15 +11,15 @@ See SETUP.md for the full brief and milestones.
 - **Verify, don't guess.** Before you use any mini-SWE-agent or SWE-bench API, read the installed package's source or docs. Don't rely on remembered flags or class names.
 - **Stop and ask the human** when a section says "Decision needed," or when a check fails twice.
 
-## Status (updated 2026-10-15)
+## Status (updated 2026-10-23)
 
 | Milestone | State |
 |---|---|
 | M0 skeleton | Done |
 | M1 doctor | Not started (stub) |
 | M2 data | Done. `data/instances.jsonl` and `data/gold.jsonl` are frozen. Never regenerate them. |
-| M3 static arm | Not started |
-| M4 exec arm | Not started |
+| M3 static arm | Code done; harness verified on macOS with a scripted model. Needs one real-model run on the 4090. |
+| M4 exec arm | Code done; untested (needs x86_64 Docker, so the 4090 machine). |
 | M5 batch and resume | Not started |
 | M6 scoring | Done |
 | M7 README | Not started |

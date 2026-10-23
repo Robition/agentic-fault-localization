@@ -1,2 +1,7 @@
-# Execution arm config. Filled in at M4; must match static.yaml except for the container.
+# Execution arm: the official SWE-bench image for each instance, which already
+# has the repository at /testbed and a working Python environment.
+# Everything else comes from base.yaml.
 arm: exec
+repo_mount: null            # the repository is inside the image
+environment:
+  image: swebench           # run.py replaces this with the instance's official image name
