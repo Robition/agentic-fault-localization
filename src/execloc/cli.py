@@ -33,7 +33,22 @@ def cmd_gold(args: argparse.Namespace) -> int:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    return _not_implemented("run")
+    from execloc.run import main as run_main
+
+    return run_main(
+        arm=args.arm, instance_ids=args.instances, run_id=args.run_id, instances_path=args.instances_file
+    )
+
+
+def cmd_build_static(args: argparse.Namespace) -> int:
+    from execloc.run import RunError, build_static_image, load_arm_config
+
+    try:
+        build_static_image(load_arm_config("static")["environment"]["image"])
+    except RunError as e:
+        print(f"execloc build-static: {e}", file=sys.stderr)
+        return 1
+    return 0
 
 
 def cmd_score(args: argparse.Namespace) -> int:
@@ -67,8 +82,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("run", help="run one arm of the experiment")
     p.add_argument("--arm", choices=["static", "exec"], required=True)
-    p.add_argument("--instances", nargs="+", metavar="ID")
+    p.add_argument("--instances", nargs="+", metavar="ID", help="instance IDs to run")
+    p.add_argument("--run-id", default="dev", help="results go to results/<run-id>/ (default: dev)")
+    p.add_argument("--instances-file", type=Path, default=DATA_DIR / "instances.jsonl")
     p.set_defaults(func=cmd_run)
+
+    p = sub.add_parser("build-static", help="build the static arm's Docker image")
+    p.set_defaults(func=cmd_build_static)
 
     p = sub.add_parser("score", help="score a run's predictions against gold")
     p.add_argument("run_id")

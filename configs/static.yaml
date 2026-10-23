@@ -1,2 +1,7 @@
-# Static arm config. Filled in at M3; must match exec.yaml except for the container.
+# Static arm: read and search only. A generic image with no Python (built from
+# docker/static.Dockerfile) and the repository at the base commit mounted
+# read-only at /testbed. Everything else comes from base.yaml.
 arm: static
+repo_mount: readonly        # run.py checks out the base commit and mounts it at /testbed
+environment:
+  image: execloc-static:1
