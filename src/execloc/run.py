@@ -9,9 +9,15 @@ only in the Docker container:
   /testbed.
 - exec: the official SWE-bench image for the instance.
 
-Before the agent starts, a preflight runs `python --version` in the container.
-It must fail in the static arm and succeed in the exec arm; otherwise the run
-stops, because the arms would not be what the experiment claims.
+Before the agent starts, a preflight:
+- in the exec arm, hides git history older than the base commit and removes
+  all branches, tags, and remotes (see trim_exec_history), so both arms see
+  only the base commit (plus, in exec, SWE-bench's own setup commits);
+- checks that no commit after the base is reachable in either arm;
+- runs `python --version`, which must fail in the static arm and succeed in
+  the exec arm.
+If any check fails the run stops, because the arms would not be what the
+experiment claims.
 
 For each instance this writes runs/<run_id>/<arm>/<instance_id>.traj.json and
 replaces that instance's row for this arm in results/<run_id>/predictions.jsonl.
@@ -190,7 +196,58 @@ def environment_config(cfg: dict, instance: dict) -> dict:
     return env
 
 
-def preflight(env, arm: str) -> None:
+def _sh(env, command: str) -> dict:
+    return env.execute({"command": command})
+
+
+def trim_exec_history(env, base_commit: str) -> None:
+    """Make the exec image's git history match the static arm's.
+
+    SWE-bench images hold the full upstream history, and HEAD may sit on a
+    setup commit made on top of the base commit (for astropy, a one-line
+    pyproject.toml change the environment needs). Keep the working tree as the
+    image built it, but hide every commit older than the base commit and drop
+    all branches, tags, remotes, and reflogs. The agent then sees the base
+    commit plus any setup commits, just as the static arm sees only the base
+    commit. Stop if a setup commit changes a .py file, because that would
+    shift line numbers relative to gold.
+    """
+    b = base_commit
+    check = _sh(env, f"git merge-base --is-ancestor {b} HEAD && git diff --name-only {b} HEAD")
+    if check["returncode"] != 0:
+        raise RunError(f"exec image HEAD does not descend from base commit {b}: {check['output'].strip()}")
+    changed_py = [f for f in check["output"].split() if f.endswith(".py")]
+    if changed_py:
+        raise RunError(f"exec image changes .py files after the base commit: {changed_py}")
+    trim = _sh(env, (
+        "set -e; git checkout -q --detach; "
+        "git for-each-ref --format='%(refname)' | while read -r r; do git update-ref -d \"$r\"; done; "
+        "for r in $(git remote); do git remote remove \"$r\"; done; "
+        f"git rev-parse {b}^{{commit}} > .git/shallow; "
+        "git reflog expire --expire=now --all"
+    ))
+    if trim["returncode"] != 0:
+        raise RunError(f"trimming git history failed: {trim['output'].strip()}")
+
+
+def check_history(env, arm: str, base_commit: str) -> None:
+    """No commit after the base may be reachable, apart from setup commits on HEAD."""
+    out = _sh(env, f"git rev-list --all --count && git rev-list --count {base_commit}..HEAD && git rev-list --all --count ^HEAD")
+    nums = out["output"].split()
+    if out["returncode"] != 0 or len(nums) != 3:
+        raise RunError(f"could not inspect git history in the {arm} container: {out['output'].strip()}")
+    total, after_base, off_head = map(int, nums)
+    if off_head or total - after_base != 1:
+        raise RunError(
+            f"{arm} container git history not trimmed: {total} commits reachable, "
+            f"{after_base} after base, {off_head} not on HEAD"
+        )
+
+
+def preflight(env, arm: str, base_commit: str) -> None:
+    if arm == "exec":
+        trim_exec_history(env, base_commit)
+    check_history(env, arm, base_commit)
     out = env.execute({"command": "python --version || python3 --version"})
     has_python = out["returncode"] == 0
     if arm == "static" and has_python:
@@ -228,7 +285,7 @@ def run_instance(instance: dict, task: str, cfg: dict, endpoint: dict, traj_path
         env_cfg = environment_config(cfg, instance)
         ensure_image(env_cfg["image"], arm)
         env = get_environment(env_cfg)
-        preflight(env, arm)
+        preflight(env, arm, instance["base_commit"])
         model = get_model(config=model_config(cfg, endpoint))
         agent = DefaultAgent(model, env, **cfg["agent"], output_path=traj_path)
         result = agent.run(task=task)
