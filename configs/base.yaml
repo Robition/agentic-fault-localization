@@ -1,0 +1,141 @@
+# Settings shared by both arms. The arm files (static.yaml, exec.yaml) may only
+# set `arm`, `repo_mount`, and keys under `environment`; tests/test_configs.py
+# enforces this so the arms can't drift apart.
+#
+# Keys are passed straight to mini-swe-agent 2.4.6:
+#   agent       -> minisweagent.agents.default.AgentConfig
+#   model       -> minisweagent.models.litellm_textbased_model.LitellmTextbasedModelConfig
+#   environment -> minisweagent.environments.docker.DockerEnvironmentConfig
+# The endpoint (api_base, model_name, api_key) is added at runtime from .env.
+
+agent:
+  step_limit: 40
+  cost_limit: 0               # 0 = no cost limit; a local model reports no cost
+  wall_time_limit_seconds: 1800
+  max_consecutive_format_errors: 3
+  system_template: |
+    You are a helpful assistant that can interact multiple times with a computer shell to investigate a software repository.
+    Your response must contain exactly ONE bash code block with ONE command (or commands connected with && or ||).
+
+    Include a THOUGHT section before your command where you explain your reasoning.
+    Format your response as shown in <format_example>.
+
+    <format_example>
+    THOUGHT: Your reasoning and analysis here
+
+    ```mswea_bash_command
+    your_command_here
+    ```
+    </format_example>
+
+    Failure to follow these rules will cause your response to be rejected.
+  instance_template: |
+    <issue>
+    {{task}}
+    </issue>
+
+    <instructions>
+    # Task: bug localization
+
+    The repository is at /testbed, your working directory, checked out at the commit where the issue above exists.
+    Your task is to find WHERE in the source code the issue must be fixed. Do not fix it, and do not modify any files.
+
+    Some tools may not be available in this environment. If a command is not found or fails, continue with the tools you have.
+
+    ## How to work
+
+    This is an interactive process. In each response, write a THOUGHT section, then exactly ONE bash command in a
+    mswea_bash_command block. You will then see its output and can issue your next command.
+    Each command runs in a new subshell, so `cd` and environment variables do not persist between commands.
+    Prefer commands with short output: use grep -n, head, tail, or sed -n to read parts of files.
+
+    ## How to finish
+
+    When you are done, submit up to 5 suspected locations, most likely first. Submit with this exact command and nothing else
+    in the block. Replace the example entry with your locations:
+
+    ```mswea_bash_command
+    echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT && cat <<'EOF'
+    <<<LOCATIONS
+    [
+      {"file": "path/to/module.py", "function": "ClassName.method_name", "start_line": 120, "end_line": 135}
+    ]
+    LOCATIONS>>>
+    EOF
+    ```
+
+    - "file": path relative to /testbed.
+    - "function": qualified name of the enclosing function or method (for example "ClassName.method_name" or "function_name"), or null for module-level code.
+    - "start_line", "end_line": the line range in the file as it is now that must change.
+
+    You cannot continue working after you submit.
+    </instructions>
+
+model:
+  model_class: litellm_textbased
+  cost_tracking: ignore_errors
+  model_kwargs:
+    temperature: 0
+    drop_params: true
+  observation_template: |
+    {% if output.exception_info -%}
+    <exception>{{output.exception_info}}</exception>
+    {% endif -%}
+    <returncode>{{output.returncode}}</returncode>
+    {% if output.output | length < 8000 -%}
+    <output>
+    {{ output.output -}}
+    </output>
+    {%- else -%}
+    <warning>
+    The output of your last command was too long.
+    Please try a different command that produces less output.
+    If you're looking at a file you can use head, tail or sed to view a smaller number of lines selectively.
+    If you're using grep or find and it produced too much output, you can use a more selective search pattern.
+    </warning>
+    {%- set elided_chars = output.output | length - 8000 -%}
+    <output_head>
+    {{ output.output[:4000] }}
+    </output_head>
+    <elided_chars>
+    {{ elided_chars }} characters elided
+    </elided_chars>
+    <output_tail>
+    {{ output.output[-4000:] }}
+    </output_tail>
+    {%- endif -%}
+  format_error_template: |
+    {% if finish_reason is defined and finish_reason in ["length", "tool_calls"] -%}
+    Your previous response reached the output token limit (finish_reason={{ finish_reason }}) before you produced a complete action, so it was cut off. Respond more concisely and provide exactly one action in the required format.
+    {%- else -%}
+    Format error:
+
+    <error>
+    {{error}}
+    </error>
+
+    Please always provide EXACTLY ONE action in triple backticks, found {{actions|length}} actions.
+
+    <response_example>
+    THOUGHT: Here are some thoughts about why you want to perform the action.
+
+    ```mswea_bash_command
+    <action>
+    ```
+    </response_example>
+
+    If you are done, submit your locations as described in the first message.
+    {%- endif %}
+
+environment:
+  environment_class: docker
+  cwd: /testbed
+  timeout: 60
+  interpreter: ["bash", "-c"]
+  run_args: ["--rm", "--network", "none"]
+  env:
+    PAGER: cat
+    MANPAGER: cat
+    LESS: -R
+    PIP_PROGRESS_BAR: "off"
+    TQDM_DISABLE: "1"
