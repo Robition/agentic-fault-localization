@@ -2,14 +2,16 @@
 # set `arm`, `repo_mount`, and keys under `environment`; tests/test_configs.py
 # enforces this so the arms can't drift apart.
 #
-# Keys are passed straight to mini-swe-agent 2.4.6:
-#   agent       -> minisweagent.agents.default.AgentConfig
+# Settings use mini-swe-agent 2.4.6 and the shared local adapters:
+#   agent       -> execloc.agent.LocalizationAgentConfig
 #   model       -> minisweagent.models.litellm_textbased_model.LitellmTextbasedModelConfig
-#   environment -> minisweagent.environments.docker.DockerEnvironmentConfig
+#   environment -> execloc.environments.ManagedDockerEnvironment
 # The endpoint (api_base, model_name, api_key) is added at runtime from .env.
 
 agent:
   step_limit: 40
+  budget_warning_calls: 5
+  submission_reserve_calls: 3
   cost_limit: 0               # 0 = no cost limit; a local model reports no cost
   wall_time_limit_seconds: 1800
   max_consecutive_format_errors: 3
@@ -128,10 +130,11 @@ model:
     {%- endif %}
 
 environment:
-  environment_class: docker
+  environment_class: execloc.environments.ManagedDockerEnvironment
   cwd: /testbed
   timeout: 60
-  interpreter: ["bash", "-c"]
+  # SWE-bench images activate their prepared testbed environment in a login shell.
+  interpreter: ["bash", "-lc"]
   run_args: ["--rm", "--network", "none"]
   env:
     PAGER: cat

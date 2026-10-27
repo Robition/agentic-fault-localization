@@ -274,7 +274,7 @@ def _row(instance_id: str, arm: str, **kw) -> dict:
 
 
 def run_instance(instance: dict, task: str, cfg: dict, endpoint: dict, traj_path: Path) -> dict:
-    from minisweagent.agents.default import DefaultAgent
+    from execloc.agent import LocalizationAgent
     from minisweagent.environments import get_environment
     from minisweagent.models import get_model
 
@@ -287,7 +287,7 @@ def run_instance(instance: dict, task: str, cfg: dict, endpoint: dict, traj_path
         env = get_environment(env_cfg)
         preflight(env, arm, instance["base_commit"])
         model = get_model(config=model_config(cfg, endpoint))
-        agent = DefaultAgent(model, env, **cfg["agent"], output_path=traj_path)
+        agent = LocalizationAgent(model, env, **cfg["agent"], output_path=traj_path)
         result = agent.run(task=task)
         exit_status = result.get("exit_status", "")
         submission = result.get("submission", "")
