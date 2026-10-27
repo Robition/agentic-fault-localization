@@ -11,13 +11,20 @@ DATA_DIR = REPO_ROOT / "data"
 RESULTS_DIR = REPO_ROOT / "results"
 
 
-def _not_implemented(name: str) -> int:
-    print(f"execloc {name}: not implemented yet", file=sys.stderr)
-    return 2
+def positive_int(value: str) -> int:
+    try:
+        number = int(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("must be a positive integer") from error
+    if number < 1:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return number
 
 
 def cmd_doctor(args: argparse.Namespace) -> int:
-    return _not_implemented("doctor")
+    from execloc.doctor import main as doctor_main
+
+    return doctor_main()
 
 
 def cmd_sample(args: argparse.Namespace) -> int:
@@ -36,7 +43,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     from execloc.run import main as run_main
 
     return run_main(
-        arm=args.arm, instance_ids=args.instances, run_id=args.run_id, instances_path=args.instances_file
+        arm=args.arm, instance_ids=args.instances, run_id=args.run_id, instances_path=args.instances_file,
+        all_instances=args.all, workers=args.workers, prune=args.prune, retry_failed=args.retry_failed,
     )
 
 
@@ -82,9 +90,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("run", help="run one arm of the experiment")
     p.add_argument("--arm", choices=["static", "exec"], required=True)
-    p.add_argument("--instances", nargs="+", metavar="ID", help="instance IDs to run")
+    selection = p.add_mutually_exclusive_group(required=True)
+    selection.add_argument("--instances", nargs="+", metavar="ID", help="frozen instance IDs to run")
+    selection.add_argument("--all", action="store_true", help="run all frozen instances")
     p.add_argument("--run-id", default="dev", help="results go to results/<run-id>/ (default: dev)")
     p.add_argument("--instances-file", type=Path, default=DATA_DIR / "instances.jsonl")
+    p.add_argument("--workers", type=positive_int, default=1, help="parallel instances (default: 1; recommended for one GPU)")
+    p.add_argument("--prune", action="store_true", help="remove each completed execution image without forcing deletion")
+    p.add_argument("--retry-failed", action="store_true", help="retry saved terminal failures; interrupted rows always resume")
     p.set_defaults(func=cmd_run)
 
     p = sub.add_parser("build-static", help="build the static arm's Docker image")

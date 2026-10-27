@@ -16,13 +16,13 @@ See SETUP.md for the full brief and milestones.
 | Milestone | State |
 |---|---|
 | M0 skeleton | Done |
-| M1 doctor | Not started (stub) |
+| M1 doctor | Done. Read-only environment checks cover Docker, disk, the local endpoint, active context, and model revision. |
 | M2 data | Done. `data/instances.jsonl` and `data/gold.jsonl` are frozen. Never regenerate them. |
 | M3 static arm | Done; one real-model run on the 4090 submitted valid locations and passed scoring. See docs/4090-smoke-fixed.md. |
 | M4 exec arm | Done; one real-model run on the 4090 submitted valid locations and passed scoring; prepared Python environment and automatic cleanup verified. |
-| M5 batch and resume | Not started |
+| M5 batch and resume | Implemented and tested: all-instance selection, workers, atomic checkpoints, interrupt/resume, and targeted image pruning. Live five-instance pilot pending validation; see docs/milestones-m1-m5-m7.md. |
 | M6 scoring | Done |
-| M7 README | Not started |
+| M7 README | Done. Cross-platform quickstart, serving setup, pilot/resume, batch, and scoring instructions. |
 
 Decisions made: the model is `devstral-small-2`, served with Ollama on the 4090 machine. That machine runs Windows 11 Home and has a working Docker. See the "Decided" notes in SETUP.md.
 
