@@ -24,7 +24,7 @@ See SETUP.md for the full brief and milestones.
 | M6 scoring | Done |
 | M7 README | Done. Cross-platform quickstart, serving setup, pilot/resume, batch, and scoring instructions. |
 
-Decisions made: the model is `devstral-small-2`, served with Ollama on the 4090 machine. That machine runs Windows 11 Home and has a working Docker. See the "Decided" notes in SETUP.md.
+Decisions made: the model is `devstral-small-2`, served with Ollama on the Windows 11 Home 4090 machine. Docker Linux containers have been validated, but the backend currently needs manual recovery after recurring HTTP 500 errors; see docs/milestones-m1-m5-m7.md. See the "Decided" notes in SETUP.md.
 
 ## Who works where (parallel work, avoid merge conflicts)
 

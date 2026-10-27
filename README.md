@@ -109,6 +109,8 @@ For a new serving installation, follow [Ollama's environment-variable instructio
 
 If Docker Desktop says it is running but doctor times out, check the engine manually before launching a batch. Previous validation encountered a stuck Docker/WSL backend. A Windows restart and manually opening Docker restored it; the runner cannot repair a frozen engine. See [serving and harness validation](docs/4090-harness-fixes.md) and [the successful paired smoke](docs/4090-smoke-fixed.md).
 
+Docker Desktop 4.41.2 predates a WSL Resource Saver hang fix in [4.42.1](https://docs.docker.com/desktop/release-notes/#4421). If the engine repeatedly hangs or returns HTTP 500, check Resource Saver during manual recovery and disable it if enabled. It is a troubleshooting candidate rather than a confirmed cause of this machine's outage. See [milestone validation](docs/milestones-m1-m5-m7.md) for current calibration status.
+
 ## Development
 
 ```text

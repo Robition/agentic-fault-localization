@@ -1,0 +1,9 @@
+{
+  "image": "docker.io/swebench/sweb.eval.x86_64.astropy_1776_astropy-14365:latest",
+  "base_commit": "7269fa3e33e8d02485a647da91a5a2a60a06af61",
+  "python_paths_in_diff": 935,
+  "python_content_or_type_changes": [],
+  "other_content_changes": [
+    "pyproject.toml"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "run_id": "pilot-4090-20261027-bounded",
+  "scored_instance_ids": [
+    "astropy__astropy-13579",
+    "astropy__astropy-14096",
+    "astropy__astropy-14309"
+  ],
+  "gold_subset_rows": 3,
+  "gold_source": "data/gold.jsonl",
+  "gold_source_sha256": "83a15ed6fdcb3a3a75441341f18c1d77c6c6038355d340407267a9122013002b",
+  "scope": "completed matched calibration cases only; other saved rows are retained but outside this scoring subset",
+  "full_sample_accuracy_claim": false
+}

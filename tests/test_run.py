@@ -341,6 +341,46 @@ def test_hung_docker_inspect_has_finite_timeout(monkeypatch):
     assert command.call_args.kwargs["timeout"] == 15
 
 
+def test_successful_image_inspect_finds_cached_image(monkeypatch):
+    docker = Mock(return_value=subprocess.CompletedProcess([], 0, '[{"Id":"sha256:abc"}]', ""))
+    monkeypatch.setattr(run, "_docker", docker)
+    assert run.image_exists("official-image") is True
+    docker.assert_called_once_with("image", "inspect", "official-image", check=False)
+
+
+@pytest.mark.parametrize("stdout,stderr", [
+    ("[]", "Error response from daemon: No such image: official-image"),
+    ("Error: no such image: official-image", ""),
+])
+def test_only_explicit_missing_image_is_a_cache_miss(monkeypatch, stdout, stderr):
+    monkeypatch.setattr(run, "_docker", Mock(return_value=subprocess.CompletedProcess([], 1, stdout, stderr)))
+    assert run.image_exists("official-image") is False
+
+
+@pytest.mark.parametrize("stdout,stderr,expected", [
+    ("[]", "request returned 500 Internal Server Error for API route /_ping", "500 Internal Server Error"),
+    ("", "Cannot connect to the Docker daemon", "Cannot connect"),
+    ("", "invalid reference format", "invalid reference format"),
+    ("", "", "exit code 1"),
+])
+def test_backend_and_invalid_reference_errors_are_not_cache_misses(monkeypatch, stdout, stderr, expected):
+    monkeypatch.setattr(run, "_docker", Mock(return_value=subprocess.CompletedProcess([], 1, stdout, stderr)))
+    with pytest.raises(run.RunError, match=expected):
+        run.image_exists("official-image")
+
+
+@pytest.mark.parametrize("arm", ["static", "exec"])
+def test_inspect_backend_failure_does_not_trigger_build_or_pull(monkeypatch, arm):
+    docker = Mock(return_value=subprocess.CompletedProcess([], 1, "", "500 Internal Server Error"))
+    build = Mock()
+    monkeypatch.setattr(run, "_docker", docker)
+    monkeypatch.setattr(run, "build_static_image", build)
+    with pytest.raises(run.RunError, match="docker image inspect failed"):
+        run.ensure_image("official-image", arm)
+    docker.assert_called_once_with("image", "inspect", "official-image", check=False)
+    build.assert_not_called()
+
+
 @pytest.mark.parametrize("dependency", ["pyproject.toml", "uv.lock", ".python-version"])
 def test_source_hash_tracks_dependency_inputs(tmp_path, monkeypatch, dependency):
     monkeypatch.setattr(run, "REPO_ROOT", tmp_path)

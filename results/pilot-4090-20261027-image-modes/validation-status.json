@@ -1,0 +1,18 @@
+{
+  "run_id": "pilot-4090-20261027-image-modes",
+  "status": "blocked by Docker Linux engine HTTP 500 before the first model call",
+  "attempted_static_instance": "astropy__astropy-14365",
+  "static_submitted": 0,
+  "exec_submitted": 0,
+  "required_followup_instances": ["astropy__astropy-14365", "astropy__astropy-14539"],
+  "source_guard_fix_verified_separately_on_real_14365_image": true,
+  "verified_python": "Python 3.9.20",
+  "doctor_after_failure": {
+    "docker": "FAIL",
+    "model_endpoint": "PASS",
+    "pinned_model_revision": "PASS",
+    "actual_context_32768": "PASS"
+  },
+  "model_calls_in_this_run": 0,
+  "full_100_per_arm_experiment_started": false
+}

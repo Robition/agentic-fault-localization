@@ -1,0 +1,12 @@
+{
+  "run_id": "pilot-4090-20261027-bounded",
+  "interrupted_exit_code": 130,
+  "checkpointed_before_resume": 2,
+  "static_rows_after_resume": 5,
+  "completed_rows_unchanged": true,
+  "completed_trajectory_sha256_unchanged": true,
+  "checkpoint_trajectory_sha256": {
+    "astropy__astropy-13579": "0a2362f41785ef048b2d7aac1d261ffa4cf3d601ebb949e77c29c74300146c55",
+    "astropy__astropy-14096": "fad80e9d857a3efda0df6c2c7046c256a93bdc5abdb89f9cb3601456b3ba50c7"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "run_id": "pilot-4090-20261027-bounded",
+  "role": "calibration pilot with a shared 2048-token response cap",
+  "static_submitted": 5,
+  "static_interrupt_resume_passed": true,
+  "exec_submitted": 3,
+  "exec_preflight_failure": "astropy__astropy-14365",
+  "exec_not_attempted": ["astropy__astropy-14539"],
+  "preflight_diagnosis": "All 935 Python-file differences in the official 14365 image have identical Git blob IDs and regular-file types; only executable permission bits differ. The existing guard incorrectly treated mode changes as content changes.",
+  "source_or_frozen_data_reset": false,
+  "full_sample_accuracy_claim": false,
+  "followup_run_id": "pilot-4090-20261027-image-modes"
+}

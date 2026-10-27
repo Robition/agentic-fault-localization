@@ -179,7 +179,13 @@ def _docker(*args: str, timeout: float = 15, check: bool = True) -> subprocess.C
 
 
 def image_exists(image: str) -> bool:
-    return _docker("image", "inspect", image, check=False).returncode == 0
+    result = _docker("image", "inspect", image, check=False)
+    if result.returncode == 0:
+        return True
+    detail = "\n".join(value.strip() for value in (result.stderr, result.stdout) if value and value.strip())
+    if "no such image" in detail.lower():
+        return False
+    raise RunError(f"docker image inspect failed for {image}: {detail or f'exit code {result.returncode}'}")
 
 
 def build_static_image(image: str) -> None:

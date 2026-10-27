@@ -11,7 +11,7 @@ Implementation validation on the Windows RTX 4090 machine, 2026-10-27.
 
 ## Automated checks
 
-`uv run pytest` with a fresh workspace-local `--basetemp`: **173 passed**. Coverage includes a scripted five-instance interruption/resume without repeating completed instances, actual Windows spawn workers, cross-process lock contention and crash release, atomic replacement failure, failure retry, targeted pruning, endpoint restrictions, doctor failure/warning behavior, and source-content validation. Model matching preserves namespace prefixes and accepts Ollama's `:latest` alias. No GPU dependencies or lockfile changes were needed. `git diff --check` also passed.
+`uv run pytest` with a fresh workspace-local `--basetemp`: **182 passed**. Coverage includes a scripted five-instance interruption/resume without repeating completed instances, actual Windows spawn workers, cross-process lock contention and crash release, atomic replacement failure, failure retry, targeted pruning, endpoint restrictions, doctor failure/warning behavior, source-content validation, and distinguishing missing images from engine errors. Model matching preserves namespace prefixes and accepts Ollama's `:latest` alias. No GPU dependencies or lockfile changes were needed. `git diff --check` also passed.
 
 ## Machine and live pilot
 
@@ -27,6 +27,16 @@ Execution stopped before the fourth model run because the source guard mistook p
 
 The corrected guard compares full blob IDs and file types from a NUL-delimited, rename-disabled Git diff. It permits unchanged regular-file contents with an executable-bit change, while continuing to reject Python content, path, existence, and type changes. Malformed diffs fail closed. The real affected image now passes preflight with Python 3.9.20, without resetting its source or rebuilding dependencies.
 
-The affected case and fifth case are being validated in both arms under fresh run ID `pilot-4090-20261027-image-modes`. The earlier failed preflight and unattempted fifth execution case remain recorded in the bounded pilot. Results from different source revisions/protocols are not pooled into an accuracy claim.
+The affected case and fifth case were scheduled in both arms under fresh run ID `pilot-4090-20261027-image-modes`. That follow-up stopped before its first model call when Docker's Linux engine again returned HTTP 500, including for `/_ping`. The subsequent doctor correctly failed Docker while passing the local model endpoint, pinned revision, and actual 32768 context. Its initial failed row remains recorded. A manual Docker Desktop restart has been requested; the final two execution cases and the full 100-per-arm study have not run.
+
+The three completed matched cases in the bounded pilot were scored against a dedicated three-row subset: `astropy__astropy-13579`, `astropy__astropy-14096`, and `astropy__astropy-14309`. Both arms have n=3, missing=0, valid submissions, file/function Hit@1=1.0, and line-overlap Hit@1=2/3. Other saved rows were explicitly outside that scoring subset and remain in predictions. These are calibration checks on a convenience sample; no broader accuracy or ranking conclusion is claimed. Results from different source revisions/protocols are not pooled.
+
+## Current Docker recovery blocker
+
+Docker Desktop 4.41.2 predates a documented WSL Resource Saver hang fix. Docker's [4.42.1 release notes](https://docs.docker.com/desktop/release-notes/#4421) say Resource Saver was disabled on WSL 2 to prevent Docker CLI hangs. Resource Saver is a possible explanation for the recurring outage, not a confirmed local cause: the inspected settings file contained no explicit override and logs showed no matching pause event.
+
+Restart Docker Desktop manually and check Resource Saver in its settings. Disable it if enabled while troubleshooting this older version. Rerun `uv run execloc doctor`; Docker must pass before launching more cases. Preserve the loaded model and its existing configuration. Use a fresh run ID after source commits, as documented in README, and validate the remaining two IDs in both arms before launching the full experiment. No factory reset, storage deletion, or dependency/source checkout was performed as recovery.
+
+Image lookup now treats only an explicit `no such image` response as a cache miss. HTTP 500, daemon, and invalid-reference errors stop immediately with the actual diagnostic instead of triggering a misleading build or pull. The static image was not proven missing during this outage; its lookup had failed.
 
 The earlier paired single-issue real-model smoke passed both arms; see [4090-smoke-fixed.md](4090-smoke-fixed.md). Neither that smoke nor these convenience pilots constitute the full 100-issue experiment. All five pilot IDs are the first frozen rows, from Astropy, so they do not establish accuracy across repositories.
