@@ -20,7 +20,7 @@ See SETUP.md for the full brief and milestones.
 | M2 data | Done. `data/instances.jsonl` and `data/gold.jsonl` are frozen. Never regenerate them. |
 | M3 static arm | Done; one real-model run on the 4090 submitted valid locations and passed scoring. See docs/4090-smoke-fixed.md. |
 | M4 exec arm | Done; one real-model run on the 4090 submitted valid locations and passed scoring; prepared Python environment and automatic cleanup verified. |
-| M5 batch and resume | Implemented and tested: all-instance selection, workers, atomic checkpoints, interrupt/resume, and targeted image pruning. Live five-instance pilot pending validation; see docs/milestones-m1-m5-m7.md. |
+| M5 batch and resume | Done. A real five-instance static run was interrupted and resumed with unchanged completed rows/trajectory hashes. Batch, workers, atomic checkpoints, failures, and pruning are tested. Paired calibration details: docs/milestones-m1-m5-m7.md. |
 | M6 scoring | Done |
 | M7 README | Done. Cross-platform quickstart, serving setup, pilot/resume, batch, and scoring instructions. |
 

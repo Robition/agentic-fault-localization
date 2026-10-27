@@ -247,6 +247,52 @@ def _sh(env, command: str) -> dict:
     return env.execute({"command": command})
 
 
+def _changed_python_paths(raw_diff: str) -> list[str]:
+    """Read a complete NUL-delimited commit diff without mistaking chmod for code.
+
+    With --no-renames every record has one path. Only an unchanged blob that
+    remains a regular file (possibly switching its executable bit) is safe for
+    Python sources; additions, removals and type changes are still changes even
+    when their blobs are empty or happen to match another object.
+    """
+    malformed = "could not inspect exec image source: malformed raw git diff"
+    if not isinstance(raw_diff, str):
+        raise RunError(malformed)
+    if not raw_diff:
+        return []
+    fields = raw_diff.split("\0")
+    if fields.pop() != "" or len(fields) % 2:
+        raise RunError(malformed)
+    header = re.compile(
+        r":([0-7]{6}) ([0-7]{6}) ([0-9a-f]{40}|[0-9a-f]{64}) "
+        r"([0-9a-f]{40}|[0-9a-f]{64}) ([ADMT])"
+    )
+    changed = []
+    for index in range(0, len(fields), 2):
+        match, path = header.fullmatch(fields[index]), fields[index + 1]
+        if match is None or not path:
+            raise RunError(malformed)
+        old_mode, new_mode, old_blob, new_blob, status = match.groups()
+        old_absent, new_absent = old_mode == "000000", new_mode == "000000"
+        if (
+            len(old_blob) != len(new_blob)
+            or old_absent != (set(old_blob) == {"0"})
+            or new_absent != (set(new_blob) == {"0"})
+            or (status == "A" and (not old_absent or new_absent))
+            or (status == "D" and (old_absent or not new_absent))
+            or (status in {"M", "T"} and (old_absent or new_absent))
+        ):
+            raise RunError(malformed)
+        same_regular_blob = (
+            status == "M" and old_blob == new_blob
+            and old_mode in {"100644", "100755"}
+            and new_mode in {"100644", "100755"}
+        )
+        if path.endswith(".py") and not same_regular_blob:
+            changed.append(path)
+    return changed
+
+
 def trim_exec_history(env, base_commit: str) -> None:
     """Make the exec image's git history match the static arm's.
 
@@ -256,14 +302,18 @@ def trim_exec_history(env, base_commit: str) -> None:
     image built it, but hide every commit older than the base commit and drop
     all branches, tags, remotes, and reflogs. The agent then sees the base
     commit plus any setup commits, just as the static arm sees only the base
-    commit. Stop if a setup commit changes a .py file, because that would
-    shift line numbers relative to gold.
+    commit. Stop if a setup commit changes Python contents, paths or file types,
+    because those can invalidate gold locations. A regular file's executable-bit
+    change with the same blob does not change source contents or line numbers.
     """
     b = base_commit
-    check = _sh(env, f"git merge-base --is-ancestor {b} HEAD && git diff --name-only {b} HEAD")
+    check = _sh(env, (
+        f"git merge-base --is-ancestor {b} HEAD && "
+        f"git diff --raw --no-abbrev --no-renames -z {b} HEAD"
+    ))
     if check["returncode"] != 0:
         raise RunError(f"exec image HEAD does not descend from base commit {b}: {check['output'].strip()}")
-    changed_py = [f for f in check["output"].split() if f.endswith(".py")]
+    changed_py = _changed_python_paths(check["output"])
     if changed_py:
         raise RunError(f"exec image changes .py files after the base commit: {changed_py}")
     trim = _sh(env, (

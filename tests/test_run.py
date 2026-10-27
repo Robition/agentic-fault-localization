@@ -378,3 +378,89 @@ def test_run_endpoint_rejects_remote_or_unsafe_urls_without_echoing_secrets(tmp_
         run.endpoint_from_env()
     assert "secret-password" not in str(caught.value)
     assert base_url not in str(caught.value)
+
+
+def _raw_change(path="module.py", *, old_mode="100644", new_mode="100644",
+                old_blob="a" * 40, new_blob="b" * 40, status="M"):
+    return f":{old_mode} {new_mode} {old_blob} {new_blob} {status}\0{path}\0"
+
+
+@pytest.mark.parametrize("old_mode,new_mode", [("100644", "100755"), ("100755", "100644")])
+def test_exec_history_keeps_identical_python_blobs_with_regular_file_mode_change(old_mode, new_mode):
+    raw = _raw_change(old_mode=old_mode, new_mode=new_mode, new_blob="a" * 40)
+    # Non-Python setup changes remain permitted, as before this guard correction.
+    raw += _raw_change("pyproject.toml")
+    env = SimpleNamespace(execute=Mock(side_effect=[
+        {"returncode": 0, "output": raw}, {"returncode": 0, "output": ""},
+    ]))
+    run.trim_exec_history(env, "base-sha")
+    first = env.execute.call_args_list[0].args[0]["command"]
+    assert "git merge-base --is-ancestor base-sha HEAD" in first
+    assert "git diff --raw --no-abbrev --no-renames -z base-sha HEAD" in first
+    assert "git reflog expire" in env.execute.call_args_list[1].args[0]["command"]
+
+
+@pytest.mark.parametrize("raw", [
+    _raw_change(),
+    _raw_change(new_mode="100755"),  # Executable bit plus a content change is unsafe.
+    _raw_change(old_mode="000000", old_blob="0" * 40,
+                new_blob="e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", status="A"),
+    _raw_change(new_mode="000000", new_blob="0" * 40,
+                old_blob="e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", status="D"),
+    _raw_change(new_mode="120000", new_blob="a" * 40, status="T"),
+    _raw_change(old_mode="120000", new_blob="a" * 40, status="T"),
+    _raw_change(old_mode="160000", new_mode="160000", new_blob="a" * 40),
+])
+def test_exec_history_rejects_python_content_existence_and_type_changes(raw):
+    env = SimpleNamespace(execute=Mock(return_value={"returncode": 0, "output": raw}))
+    with pytest.raises(run.RunError, match=r"exec image changes \.py files after the base commit"):
+        run.trim_exec_history(env, "base-sha")
+    assert env.execute.call_count == 1  # Do not hide history after an unsafe diff.
+
+
+@pytest.mark.parametrize("old_path,new_path,expected", [
+    ("old.py", "new.py", ["old.py", "new.py"]),
+    ("old.py", "new.txt", ["old.py"]),
+    ("old.txt", "new.py", ["new.py"]),
+])
+def test_no_renames_diff_still_rejects_moved_python_paths(old_path, new_path, expected):
+    raw = _raw_change(old_path, new_mode="000000", new_blob="0" * 40, status="D")
+    raw += _raw_change(new_path, old_mode="000000", old_blob="0" * 40,
+                       new_blob="a" * 40, status="A")
+    assert run._changed_python_paths(raw) == expected
+
+
+def test_raw_diff_preserves_spaces_newlines_and_full_sha256_object_ids():
+    path = "directory with spaces/module\nname.py"
+    assert run._changed_python_paths(_raw_change(path)) == [path]
+    raw = _raw_change(old_mode="100755", new_mode="100644",
+                      old_blob="a" * 64, new_blob="a" * 64)
+    assert run._changed_python_paths(raw) == []
+    assert run._changed_python_paths("") == []
+
+
+@pytest.mark.parametrize("raw", [
+    None, "not a raw diff", "\0", _raw_change()[:-1],
+    _raw_change().replace("\0module.py\0", "\0\0"),
+    _raw_change().replace(":100644", "100644", 1),
+    _raw_change().replace("a" * 40, "a" * 12),
+    _raw_change().replace("b" * 40, "b" * 64),
+    _raw_change(status="R100") + "new.py\0",  # --no-renames must use A/D records.
+    _raw_change(old_mode="000000"),  # Absent path cannot have a nonzero blob.
+    _raw_change(old_blob="0" * 40),  # Regular file cannot have the null blob.
+    _raw_change(status="A"),  # Addition must have an absent old path.
+    _raw_change(status="D"),  # Deletion must have an absent new path.
+    _raw_change() + "garbage\0",
+])
+def test_malformed_raw_diff_fails_closed_before_history_is_trimmed(raw):
+    env = SimpleNamespace(execute=Mock(return_value={"returncode": 0, "output": raw}))
+    with pytest.raises(run.RunError, match="malformed raw git diff"):
+        run.trim_exec_history(env, "base-sha")
+    assert env.execute.call_count == 1
+
+
+def test_exec_image_must_still_descend_from_the_frozen_base():
+    env = SimpleNamespace(execute=Mock(return_value={"returncode": 1, "output": "not an ancestor"}))
+    with pytest.raises(run.RunError, match="HEAD does not descend from base commit"):
+        run.trim_exec_history(env, "base-sha")
+    assert env.execute.call_count == 1
