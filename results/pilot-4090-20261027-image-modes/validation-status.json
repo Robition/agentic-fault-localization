@@ -1,6 +1,8 @@
 {
   "run_id": "pilot-4090-20261027-image-modes",
   "status": "blocked by Docker Linux engine HTTP 500 before the first model call",
+  "owner_decision": "finish code/docs; leave final live runs pending until requested",
+  "owner_decision_date": "2026-10-27",
   "attempted_static_instance": "astropy__astropy-14365",
   "static_submitted": 0,
   "exec_submitted": 0,
