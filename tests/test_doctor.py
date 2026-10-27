@@ -219,3 +219,12 @@ def test_http_transport_has_timeout_bypasses_proxies_and_uses_get(monkeypatch):
     assert doctor._get_json("http://localhost:11434/v1/models", "secret") == {"data": []}
     assert requests[0].get_method() == "GET"
     assert requests[0].get_header("Authorization") == "Bearer secret"
+@pytest.mark.parametrize("actual,configured,expected", [
+    ("devstral-small-2:latest", "devstral-small-2", True),
+    ("team/devstral-small-2", "devstral-small-2", False),
+    ("team/devstral-small-2:latest", "team/devstral-small-2", True),
+    ("other/devstral-small-2", "team/devstral-small-2", False),
+])
+def test_model_name_preserves_namespace(actual, configured, expected):
+    assert doctor._model_matches(actual, configured) is expected
+

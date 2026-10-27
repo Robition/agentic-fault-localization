@@ -93,7 +93,7 @@ def _model_matches(actual: object, configured: str) -> bool:
     if not isinstance(actual, str):
         return False
     actual, configured = actual.removesuffix(":latest"), configured.removesuffix(":latest")
-    return actual == configured or ("/" not in configured and actual.rsplit("/", 1)[-1] == configured)
+    return actual == configured
 
 
 def _revision_check(loaded: list[dict]) -> Check:
