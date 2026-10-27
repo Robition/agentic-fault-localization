@@ -1,0 +1,2 @@
+{"instance_id": "astropy__astropy-13579", "arm": "static", "locations": [], "parse_error": true, "steps": 40, "input_tokens": 463627, "output_tokens": 4738, "wall_seconds": 144.3, "exec_attempts": 2, "exit_status": "LimitsExceeded"}
+{"instance_id": "astropy__astropy-13579", "arm": "exec", "locations": [], "parse_error": true, "steps": 40, "input_tokens": 363518, "output_tokens": 4922, "wall_seconds": 137.1, "exec_attempts": 5, "exit_status": "LimitsExceeded"}
