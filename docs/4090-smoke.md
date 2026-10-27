@@ -1,5 +1,7 @@
 # RTX 4090 real-model smoke test, 2026-10-26
 
+Follow-up: the fixed paired real-model smoke test passed on 2026-10-27. See [the successful rerun](4090-smoke-fixed.md). The original failures below are preserved.
+
 Run ID: `smoke-4090-20261026`.
 Harness commit: `ba37f752f4faf494d52fcd6eb2e1be40289d34c3`.
 Instance: `astropy__astropy-13579`, frozen base `0df94ff7097961e92fd7812036a24b145bc13ca8`.

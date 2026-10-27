@@ -1,0 +1,3 @@
+arm,n,missing,parse_error_rate,n_file,n_function,n_line,file_hit@1,file_hit@3,file_hit@5,function_hit@1,function_hit@3,function_hit@5,line_hit@1,line_hit@3,line_hit@5,mean_steps,mean_input_tokens,mean_output_tokens,mean_wall_seconds,mean_exec_attempts
+exec,1,0,0.0,1,1,1,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,36.0,354023.0,9130.0,211.3,8.0
+static,1,0,0.0,1,1,1,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,28.0,245389.0,3384.0,95.7,2.0

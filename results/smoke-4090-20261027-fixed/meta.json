@@ -1,0 +1,25 @@
+{
+  "model": "devstral-small-2",
+  "model_revision": "24277f07f62db8f9cb68e9dfc679ea1818a7fbac47a50eff0a701d3f645b63c8",
+  "serving_engine": "ollama",
+  "context_length": 32768,
+  "shared_config_hash": "12e728b5b05ae875",
+  "arms": {
+    "static": {
+      "config_hash": "ad53f4cdc959105a",
+      "git_commit": "1bd8c46d8d83d29bd1d624293a01a5ee846df131",
+      "git_dirty": false,
+      "mini_swe_agent_version": "2.4.6",
+      "hostname": "TurtleDesktop",
+      "platform": "Windows AMD64"
+    },
+    "exec": {
+      "config_hash": "6cb2656a4044a58d",
+      "git_commit": "1bd8c46d8d83d29bd1d624293a01a5ee846df131",
+      "git_dirty": true,
+      "mini_swe_agent_version": "2.4.6",
+      "hostname": "TurtleDesktop",
+      "platform": "Windows AMD64"
+    }
+  }
+}

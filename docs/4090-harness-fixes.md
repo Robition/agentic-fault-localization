@@ -1,5 +1,7 @@
 # Harness fixes and retest status, 2026-10-27
 
+Update: Docker recovered after the owner started it manually. Live preflight, automatic cleanup, and both real-model runs now pass; see [the successful rerun](4090-smoke-fixed.md). The earlier recovery blocker below is historical.
+
 The machine owner authorized these changes after reviewing the first real-model smoke failures. Code commit: `9f27d05d424df9348a58afaa039ab394b763c189` on `smoke/4090`.
 
 ## Changes
