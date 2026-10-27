@@ -22,6 +22,7 @@ def test_arms_differ_only_in_container():
 def test_shared_settings():
     cfg = load_arm_config("static")
     assert cfg["model"]["model_kwargs"]["temperature"] == 0
+    assert cfg["model"]["model_kwargs"]["max_tokens"] == 2048
     assert cfg["model"]["model_class"] == "litellm_textbased"
     assert "<<<LOCATIONS" in cfg["agent"]["instance_template"]
     assert "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT" in cfg["agent"]["instance_template"]
@@ -49,3 +50,4 @@ def test_model_config_uses_local_endpoint():
     assert m["model_name"] == "openai/devstral-small-2"
     assert m["model_kwargs"]["api_base"] == "http://localhost:11434/v1"
     assert m["model_kwargs"]["temperature"] == 0
+    assert m["model_kwargs"]["max_tokens"] == 2048

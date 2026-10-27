@@ -78,6 +78,9 @@ model:
   cost_tracking: ignore_errors
   model_kwargs:
     temperature: 0
+    # Bound each response: a local pilot otherwise generated >16K tokens in one call.
+    # Both arms use this cap; truncated actions receive the shared format correction.
+    max_tokens: 2048
     drop_params: true
   observation_template: |
     {% if output.exception_info -%}

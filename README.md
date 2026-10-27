@@ -44,6 +44,8 @@ The validated build was Devstral Small 2, 24.0B, Q4_K_M, digest `24277f07f62db8f
 
 Use one run ID for both arms and one source revision/model/config throughout that run. Use a fresh run ID after changes. The runner checks saved provenance before extending a run. Preserve the frozen `data/instances.jsonl` and `data/gold.jsonl`; do not regenerate them for the experiment.
 
+The shared protocol allows 40 model calls and at most 2048 output tokens per response. The response cap prevents one runaway generation from occupying the server indefinitely; the existing format correction handles a response cut off before a complete action. Both arms use the same limits.
+
 ## Doctor
 
 ```text
