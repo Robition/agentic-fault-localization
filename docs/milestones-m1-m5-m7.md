@@ -11,10 +11,16 @@ Implementation validation on the Windows RTX 4090 machine, 2026-10-27.
 
 ## Automated checks
 
-`uv run pytest` with a fresh workspace-local `--basetemp`: **141 passed**. Coverage includes a scripted five-instance interruption/resume without repeating completed instances, actual Windows spawn workers, cross-process lock contention and crash release, atomic replacement failure, failure retry, targeted pruning, endpoint restrictions, and doctor failure/warning behavior. No GPU dependencies or lockfile changes were needed. `git diff --check` also passed.
+`uv run pytest` with a fresh workspace-local `--basetemp`: **145 passed**. Coverage includes a scripted five-instance interruption/resume without repeating completed instances, actual Windows spawn workers, cross-process lock contention and crash release, atomic replacement failure, failure retry, targeted pruning, endpoint restrictions, and doctor failure/warning behavior. Model matching preserves namespace prefixes and accepts Ollama's `:latest` alias. No GPU dependencies or lockfile changes were needed. `git diff --check` also passed.
 
 ## Machine and live pilot
 
 The doctor initially detected a Docker engine HTTP 500 while the model endpoint remained healthy. After the owner manually opened Docker Desktop, the doctor confirmed the Linux daemon and endpoint were reachable. The unloaded model produced warnings, as intended; it must be loaded before checking actual serving context/revision.
 
-The new five-instance live pilot and real interruption/resume validation are in progress. The earlier paired single-issue real-model smoke passed both arms; see [4090-smoke-fixed.md](4090-smoke-fixed.md). Neither that smoke nor the automated batch tests constitute the full 100-issue experiment.
+The real interruption/resume check passed in `pilot-4090-20261027`: SIGINT after the first checkpoint drained the active second issue and returned 130. Resuming completed the remaining three issues. All five static submissions parsed; the two saved prediction rows and trajectory SHA-256 hashes remained unchanged. See `results/pilot-4090-20261027/resume-validation.json`.
+
+The first execution response then generated more than 16,000 tokens without returning an action. The harness process was stopped and only its owned container removed. No completed execution prediction or exact API token usage was available, and no paired accuracy is claimed for that diagnostic run. Its `validation-status.json` records the interruption explicitly.
+
+The shared configuration now caps each response at 2048 output tokens in both arms, with the existing length/format correction retained. A fresh five-instance paired pilot, `pilot-4090-20261027-bounded`, is in progress under that configuration; outcomes from the two protocols are not combined.
+
+The earlier paired single-issue real-model smoke passed both arms; see [4090-smoke-fixed.md](4090-smoke-fixed.md). Neither that smoke nor these convenience pilots constitute the full 100-issue experiment. All five pilot IDs are the first frozen rows, from Astropy, so they do not establish accuracy across repositories.

@@ -1,0 +1,13 @@
+{
+  "run_id": "pilot-4090-20261027",
+  "role": "diagnostic pilot before the shared response cap",
+  "static_completed": 5,
+  "static_interrupt_resume_passed": true,
+  "exec_completed": 0,
+  "exec_attempted_instance": "astropy__astropy-13579",
+  "exec_attempt_status": "manually aborted during the first model response",
+  "reason": "Ollama logged more than 16000 generated tokens in one response without returning an action; the request process was stopped and its owned container removed",
+  "partial_exec_token_usage": null,
+  "paired_accuracy_claim": false,
+  "followup_run_id": "pilot-4090-20261027-bounded"
+}
